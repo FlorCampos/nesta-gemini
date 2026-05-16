@@ -1,0 +1,30 @@
+# Environment variables (API keys)
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Mac
+.DS_Store
+
+# Build
+build/
+*.egg-info/
+
+# PDFs (too large for GitHub — share via Google Drive)
+backend/content/resources/raw/*.pdf
+
+# Google Cloud credentials
+credentials.json
+backend/credentials.json
+
+# Firebase cache
+.firebase/

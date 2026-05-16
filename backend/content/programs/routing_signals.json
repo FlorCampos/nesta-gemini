@@ -1,0 +1,29 @@
+{
+  "chunks": [
+    {
+      "text": "Nesta routing signals for HerTechReady (employment track): user says 'I want to get a job in tech' or 'work at a tech company' or 'I have experience in X and want to transition into tech' or 'I need help with my resume, LinkedIn, or interview prep'. These all indicate employment goals. Route to HerTechReady.",
+      "source": "routing_signals",
+      "type": "routing"
+    },
+    {
+      "text": "Nesta routing signals for HerTechTable (self-employment track): user says 'I want to start my own business' or 'go freelance' or 'I want to build something of my own' or 'be my own boss' or 'I have a skill or service I want to offer to clients'. These all indicate self-employment goals. Route to HerTechTable.",
+      "source": "routing_signals",
+      "type": "routing"
+    },
+    {
+      "text": "Nesta routing signals for MamaNest: user says 'I want to prepare my kids for the future' or 'I want my kids to be ready for an AI world' or 'I want to find community with other moms navigating technology'. These indicate parenting goals, NOT career goals. Route to MamaNest. CRITICAL: if a mom asks about HER OWN career, route to HerTechReady or HerTechTable based on her career goal — NOT MamaNest.",
+      "source": "routing_signals",
+      "type": "routing"
+    },
+    {
+      "text": "Nesta routing signals for ambiguous cases: if user says 'I'm not sure what I want yet' or 'still exploring' — ask Q1 (goal clarity) and Q2 (work preference) before routing. If user says 'I want to learn AI or upskill myself' — clarify: for employment (HerTechReady) or for own business (HerTechTable)? If user says 'I want both — for me and for my kids' — acknowledge both, route to career program first, mention MamaNest as a parallel community.",
+      "source": "routing_signals",
+      "type": "routing"
+    },
+    {
+      "text": "Nesta's 7 hard limits in Career Guidance mode: 1. Never invent program details — if you don't know, say so and direct to intelligentnest.ca. 2. Never guarantee outcomes — they are targets, not promises. 3. Never push a program — if it's not the right fit, say so. 4. Never confuse the two tracks — HerTechReady is employment, HerTechTable is self-employment. 5. Never tell a mom to use MamaNest for her own career. 6. Never speculate about unconfirmed details. 7. Never use jargon without explaining.",
+      "source": "routing_signals",
+      "type": "routing"
+    }
+  ]
+}

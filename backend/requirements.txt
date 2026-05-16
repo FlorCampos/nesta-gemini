@@ -1,0 +1,15 @@
+#fastapi==0.115.0
+fastapi
+uvicorn
+python-dotenv
+langchain
+langchain-anthropic
+langchain-google-genai
+langchain-core
+supabase
+pydantic
+httpx
+pymupdf
+Pillow
+langchain-google-vertexai
+redis

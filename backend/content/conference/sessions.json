@@ -1,0 +1,44 @@
+{
+  "chunks": [
+    {
+      "text": "Her Career Conference 2026 — Her Future of Work (2nd Edition). Presented by Intelligent Nest and MamaNest. Main event: May 30, 2026, 2:00 PM to 5:00 PM at District 3 Innovation Centre, 1250 Rue Guy Suite #600, Montreal, QC H3H 2L3. Workshop series: June 1-5, 2026, online, daily 12:00-13:00. Registration: https://luma.com/qxt3t6an. Hashtag: #HerFutureOfWork. Nesta launches live at the conference on May 30.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 1: Welcome and Opening. Speaker: Mahsa Rezaei. May 30, 2:00-2:30 PM. 30 minutes. District3. Opening ceremony, introduction to the conference theme Her Future of Work, and launch of the day's program. Relevant for all attendees.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 2: App Launch — Nesta. Speaker: TBD. May 30, 2:30-2:45 PM. 15 minutes. District3. Official launch of Nesta, the AI platform for the Nest ecosystem. Attendees are introduced to Nesta and prompted to start using her during the conference. This is the moment Nesta goes live.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 3: BrainDate. Speaker: Prisca Onyebuchi. May 30, 2:45-3:15 PM. 30 minutes. District3. Interactive session — good for networking and peer learning. Session description to be confirmed.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 4: Break. May 30, 3:15-3:30 PM. 15 minutes. No speaker. Attendees free to network, use Nesta, or visit sponsor tables.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 5: Panel — The Future of Work Wasn't Built for Women — So How Do We Win? Speakers: Lin Sok, Dominique Pirolo, Samantha Bateman. May 30, 3:30-4:15 PM. 45 minutes. District3. The panel unpacks what is actually broken in today's hiring and workplace systems, how AI and data are reshaping opportunity and bias, what women need to understand now to stay ahead, and how to position yourself to win on your own terms. This is not an inspiration panel — it is a reality check and a strategy session. Relevant for all attendees, especially women navigating career transitions or facing systemic barriers.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 6: Networking. May 30, 4:15-4:45 PM. 30 minutes. Open networking with attendees, speakers, employers, mentors, and ecosystem partners. Nesta can help users prepare for networking: suggest conversation starters, help them articulate their goals, or recommend specific people to seek out.",
+      "source": "conference_sessions",
+      "type": "conference"
+    },
+    {
+      "text": "Session 7: Closing and Group Photo. Speaker: Stefania Pecore. May 30, 4:45-5:00 PM. 15 minutes. Closing remarks, celebration of the day, and group photo.",
+      "source": "conference_sessions",
+      "type": "conference"
+    }
+  ]
+}
