@@ -6,14 +6,8 @@ const INITIAL_MESSAGES = [
   {
     id: 1,
     sender: 'nesta',
-    text: "Hi! I'm Nesta. I can help you navigate today's sessions, explore career paths, or learn about programs designed for women like you.",
+    text: "Hi! I'm Nesta 😊. I can help you navigate today's sessions, explore career paths, or learn about programs designed for women like you.",
   },
-]
-
-const PROMPTS = [
-  'Which session should I attend?',
-  "I'm thinking about pivoting into tech",
-  'What is Intelligent Nest?',
 ]
 
 export default function NestaChatPage() {
@@ -89,56 +83,65 @@ export default function NestaChatPage() {
     }
   }
 
-  const handlePrompt = (prompt) => {
-    setInput(prompt)
-  }
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2 space-y-2 chat-scroll">
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} />
         ))}
 
-        {messages.length === 1 && (
-          <div className="flex flex-col gap-1.5 pl-12 mt-1">
-            {PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => handlePrompt(prompt)}
-                className="text-xs text-left px-4 py-2 rounded-full border border-[#b69088] text-[#b69088] w-fit"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        )}
-
         {isLoading && bufferRef.current === '' && (
-          <div className="flex items-center gap-1 pl-12">
-            <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="flex items-center px-1">
+            <div className="w-7 h-7 rounded-full bg-[#b69088] flex items-center justify-center text-white text-xs font-medium mr-2 shrink-0">
+              N
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-[#b69088] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="text-xs text-[#b69088] italic ml-1">Nesta is thinking...</span>
+            </div>
           </div>
         )}
 
         <div ref={chatEndRef} />
       </div>
 
-      <div className="px-4 py-3 border-t border-gray-100 flex gap-2 items-center">
-        <input
-          type="text"
+      <div className="shrink-0 px-4 py-3 border-t border-gray-100 flex gap-2 items-end bg-white w-full overflow-hidden box-border">
+        <textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          onFocus={() => {
+            // Fight iOS Safari scroll displacement
+            setTimeout(() => {
+              window.scrollTo(0, 0)
+              document.body.scrollTop = 0
+              document.documentElement.scrollTop = 0
+            }, 50)
+            setTimeout(() => {
+              window.scrollTo(0, 0)
+              chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            }, 300)
+          }}
+          onChange={(e) => {
+            setInput(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
           placeholder="Ask Nesta anything..."
           disabled={isLoading}
-          className="flex-1 px-4 py-2.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:border-[#b69088] disabled:opacity-50"
+          rows={1}
+          className="flex-1 px-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 text-base text-gray-900 outline-none focus:border-[#b69088] disabled:opacity-50 resize-none overflow-hidden"
         />
         <button
           onClick={handleSend}
           disabled={isLoading}
-          className="w-10 h-10 rounded-full bg-[#b69088] flex items-center justify-center disabled:opacity-50"
+          className="w-10 h-10 rounded-full bg-[#b69088] flex items-center justify-center disabled:opacity-50 shrink-0"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
             <line x1="22" y1="2" x2="11" y2="13" />

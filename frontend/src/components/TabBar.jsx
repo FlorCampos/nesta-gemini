@@ -8,7 +8,10 @@ const tabs = [
 
 export default function TabBar({ activeTab, onTabChange }) {
   return (
-    <div className="flex border-t border-gray-100 py-2 pb-4 bg-white">
+    <div
+      className="shrink-0 flex border-t border-gray-100 py-2 bg-white w-full overflow-hidden"
+      style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 8px))' }}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}
