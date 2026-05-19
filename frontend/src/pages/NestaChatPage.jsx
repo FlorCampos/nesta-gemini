@@ -10,7 +10,7 @@ const INITIAL_MESSAGES = [
   },
 ]
 
-export default function NestaChatPage() {
+export default function NestaChatPage({ consentGiven }) {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -62,6 +62,7 @@ export default function NestaChatPage() {
       await sendMessageStream(
         input,
         'default',
+        consentGiven === true,
         (chunk) => {
           bufferRef.current += chunk
           startTyping()
@@ -111,7 +112,6 @@ export default function NestaChatPage() {
         <textarea
           value={input}
           onFocus={() => {
-            // Fight iOS Safari scroll displacement
             setTimeout(() => {
               window.scrollTo(0, 0)
               document.body.scrollTop = 0

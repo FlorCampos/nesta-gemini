@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Header from './components/Header'
 import LiveBar from './components/LiveBar'
 import TabBar from './components/TabBar'
+import ConsentModal from './components/ConsentModal'
 import NestaChatPage from './pages/NestaChatPage'
 import AgendaPage from './pages/AgendaPage'
 import SpeakersPage from './pages/SpeakersPage'
@@ -10,13 +11,14 @@ import ShowcasePage from './pages/ShowcasePage'
 
 function App() {
   const [activeTab, setActiveTab] = useState('nesta')
+  const [consentGiven, setConsentGiven] = useState(null)
+  const [showConsent, setShowConsent] = useState(true)
+  const [isLeaving, setIsLeaving] = useState(false)
   const [appStyle, setAppStyle] = useState({
     position: 'fixed',
     top: 0,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '100%',
-    maxWidth: '448px',
+    left: 0,
+    width: `${window.innerWidth}px`,
     height: '100%',
   })
 
@@ -44,13 +46,6 @@ function App() {
     }
     window.addEventListener('resize', updateLayout)
 
-    // Prevent horizontal scroll on iOS Safari
-    document.addEventListener('touchmove', (e) => {
-      if (Math.abs(e.touches[0].clientX) > window.innerWidth) {
-        e.preventDefault()
-      }
-    }, { passive: false })
-
     return () => {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', updateLayout)
@@ -60,14 +55,23 @@ function App() {
     }
   }, [updateLayout])
 
+  const handleConsent = (accepted) => {
+    setConsentGiven(accepted)
+    setIsLeaving(true)
+    setTimeout(() => {
+      setShowConsent(false)
+      setIsLeaving(false)
+    }, 500)
+  }
+
   const renderPage = () => {
     switch (activeTab) {
       case 'agenda': return <AgendaPage />
       case 'speakers': return <SpeakersPage />
-      case 'nesta': return <NestaChatPage />
+      case 'nesta': return <NestaChatPage consentGiven={consentGiven} />
       case 'resources': return <ResourcesPage />
       case 'showcase': return <ShowcasePage />
-      default: return <NestaChatPage />
+      default: return <NestaChatPage consentGiven={consentGiven} />
     }
   }
 
@@ -78,8 +82,16 @@ function App() {
     >
       <Header />
       <LiveBar />
-      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {renderPage()}
+      <main className="flex-1 min-h-0 flex flex-col">
+        {showConsent && activeTab === 'nesta' ? (
+          <ConsentModal
+            isLeaving={isLeaving}
+            onAccept={() => handleConsent(true)}
+            onDecline={() => handleConsent(false)}
+          />
+        ) : (
+          renderPage()
+        )}
       </main>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>

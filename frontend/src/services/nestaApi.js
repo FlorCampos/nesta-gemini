@@ -2,7 +2,7 @@ const API_URL = window.location.hostname === 'localhost'
   ? '/api/nesta' 
   : 'https://nesta-backend-944231955606.us-central1.run.app/api/nesta'
 
-export async function sendMessageStream(message, sessionId = 'default', onChunk, onDone) {
+export async function sendMessageStream(message, sessionId = 'default', consentGiven = false, onChunk, onDone) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -10,21 +10,17 @@ export async function sendMessageStream(message, sessionId = 'default', onChunk,
       body: JSON.stringify({
         message: message,
         session_id: sessionId,
-        consent_given: true,
+        consent_given: consentGiven,
       }),
     })
-
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let doneReceived = false
-
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-
       const text = decoder.decode(value)
       const lines = text.split('\n')
-
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           try {
@@ -41,8 +37,6 @@ export async function sendMessageStream(message, sessionId = 'default', onChunk,
         }
       }
     }
-
-    // Safety net: if stream ended without done event
     if (!doneReceived) {
       onDone()
     }
