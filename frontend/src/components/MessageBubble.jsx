@@ -1,23 +1,62 @@
+// components/MessageBubble.jsx
+import NestaLogo from './NestaLogo'
+
 export default function MessageBubble({ message }) {
   const isNesta = message.sender === 'nesta'
 
-  // Don't render empty Nesta bubbles (shown as typing indicator instead)
   if (isNesta && !message.text) return null
 
-  return (
-    <div className={`flex ${isNesta ? 'justify-start items-end' : 'justify-end'} px-1`}>
-      {isNesta && (
-        <div className="w-7 h-7 rounded-full bg-[#b69088] flex items-center justify-center text-white text-xs font-medium mr-2 mb-0.5 shrink-0">
-          N
+  if (isNesta) {
+    return (
+      // Row: avatar bottom-aligned + bubble
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-end',   
+        gap: 8,
+        paddingLeft: 4,
+        paddingRight: 16,         
+      }}>
+        {/* Nesta logo avatar — 26 px, aligned to bottom of bubble */}
+        <div style={{ flexShrink: 0, marginBottom: 2 }}>
+          <NestaLogo size={26} />
         </div>
-      )}
-      <div
-        className={`max-w-[75%] px-4 py-2.5 text-sm leading-relaxed break-words overflow-hidden ${
-          isNesta
-            ? 'bg-[#f5f0ee] text-gray-800 rounded-2xl rounded-bl-sm'
-            : 'bg-[#b69088] text-white rounded-2xl rounded-br-sm'
-        }`}
-      >
+
+        {/* Bubble */}
+        <div style={{
+          maxWidth: '78%',
+          padding: '10px 13px',
+          background: '#ffffff',
+          border: '0.5px solid rgba(182,144,136,0.25)',
+          borderRadius: '14px 14px 14px 3px',   // sharp bottom-left = tail side
+          fontSize: 13,
+          color: '#2d2420',
+          lineHeight: 1.6,
+          wordBreak: 'break-word',
+        }}>
+          {message.text}
+        </div>
+      </div>
+    )
+  }
+
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      paddingLeft: 48,            
+      paddingRight: 4,
+    }}>
+      <div style={{
+        maxWidth: '78%',
+        padding: '10px 13px',
+        background: '#b69088',
+        borderRadius: '14px 14px 3px 14px',   
+        fontSize: 13,
+        color: '#ffffff',
+        lineHeight: 1.6,
+        wordBreak: 'break-word',
+      }}>
         {message.text}
       </div>
     </div>

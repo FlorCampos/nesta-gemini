@@ -2,8 +2,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 // 1. Credenciales de tu proyecto de Supabase
-const SUPABASE_URL ='https://SUPABASE_URL_REMOVED'
-const SUPABASE_ANON_KEY ='SUPABASE_ANON_KEY_REMOVED'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("❌ Alerta: Falta definir VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en tu archivo .env");
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -68,9 +72,7 @@ export function getSessionStatus(timeRange) {
     if (!startStr || !endStr) return 'upcoming';
 
     const now = new Date();
-    // ATENCIÓN: Como tu base de datos simula un evento real, 
-    // forzamos a que esté "en vivo" si la hora actual coincide,
-    // o puedes cambiarlo para pruebas.
+    
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     const [sh, sm] = startStr.trim().split(':').map(Number);

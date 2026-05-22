@@ -1,23 +1,52 @@
 import { useState, useEffect, useCallback } from 'react'
 import Header from './components/Header'
-import LiveBar from './components/LiveBar'
 import TabBar from './components/TabBar'
+import ConsentModal from './components/ConsentModal'
 import NestaChatPage from './pages/NestaChatPage'
 import AgendaPage from './pages/AgendaPage'
 import SpeakersPage from './pages/SpeakersPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ShowcasePage from './pages/ShowcasePage'
 
+const CONSENT_KEY = 'nesta_consent_given'
+
 function App() {
-  const [activeTab, setActiveTab] = useState('nesta')
+  const [activeTab, setActiveTab] = useState('agenda')
+
+  // Only true/null — we don't store false anymore.
+  // If the user closes with X, they just go back to Agenda.
+  // Next time they tap Nesta, the modal appears again.
+  const [consentGiven, setConsentGiven] = useState(() =>
+    localStorage.getItem(CONSENT_KEY) === 'true'
+  )
+
+  const [isLeaving, setIsLeaving] = useState(false)
+
+  // Show modal when user taps Nesta AND hasn't accepted yet
+  const showConsent = activeTab === 'nesta' && !consentGiven
+
+  const handleAccept = () => {
+    setIsLeaving(true)
+    setTimeout(() => {
+      localStorage.setItem(CONSENT_KEY, 'true')
+      setConsentGiven(true)
+      setIsLeaving(false)
+    }, 420)
+  }
+
+  // X button: just go back to Agenda — don't store anything
+  // so the modal appears again next time they tap Nesta
+  const handleDecline = () => {
+    setIsLeaving(true)
+    setTimeout(() => {
+      setActiveTab('agenda')
+      setIsLeaving(false)
+    }, 280)
+  }
+
+  // ── Viewport layout (iOS Safari keyboard) ─────────────────────────────────
   const [appStyle, setAppStyle] = useState({
-    position: 'fixed',
-    top: 0,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '100%',
-    maxWidth: '448px',
-    height: '100%',
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
   })
 
   const updateLayout = useCallback(() => {
@@ -25,62 +54,59 @@ function App() {
       const isMobile = window.visualViewport.width < 480
       setAppStyle({
         position: 'fixed',
-        top: `${window.visualViewport.offsetTop}px`,
-        left: isMobile ? 0 : '50%',
+        top:       `${window.visualViewport.offsetTop}px`,
+        left:      isMobile ? 0 : '50%',
         transform: isMobile ? 'none' : 'translateX(-50%)',
-        width: isMobile ? `${window.visualViewport.width}px` : '100%',
-        maxWidth: isMobile ? 'none' : '448px',
-        height: `${window.visualViewport.height}px`,
+        width:     isMobile ? `${window.visualViewport.width}px` : '100%',
+        maxWidth:  isMobile ? 'none' : '448px',
+        height:    `${window.visualViewport.height}px`,
       })
     }
   }, [])
 
   useEffect(() => {
     updateLayout()
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateLayout)
-      window.visualViewport.addEventListener('scroll', updateLayout)
-    }
+    window.visualViewport?.addEventListener('resize', updateLayout)
+    window.visualViewport?.addEventListener('scroll', updateLayout)
     window.addEventListener('resize', updateLayout)
-
-    // Prevent horizontal scroll on iOS Safari
-    document.addEventListener('touchmove', (e) => {
-      if (Math.abs(e.touches[0].clientX) > window.innerWidth) {
-        e.preventDefault()
-      }
-    }, { passive: false })
-
     return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateLayout)
-        window.visualViewport.removeEventListener('scroll', updateLayout)
-      }
+      window.visualViewport?.removeEventListener('resize', updateLayout)
+      window.visualViewport?.removeEventListener('scroll', updateLayout)
       window.removeEventListener('resize', updateLayout)
     }
   }, [updateLayout])
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'agenda': return <AgendaPage />
-      case 'speakers': return <SpeakersPage />
-      case 'nesta': return <NestaChatPage />
+      case 'agenda':    return <AgendaPage />
+      case 'speakers':  return <SpeakersPage />
+      case 'nesta':     return <NestaChatPage consentGiven={consentGiven} />
       case 'resources': return <ResourcesPage />
-      case 'showcase': return <ShowcasePage />
-      default: return <NestaChatPage />
+      case 'showcase':  return <ShowcasePage />
+      default:          return <AgendaPage />
     }
   }
 
   return (
     <div
-      className="mx-auto max-w-md bg-white flex flex-col overflow-hidden"
-      style={appStyle}
+      className="flex flex-col"
+      style={{ ...appStyle, background: '#faf7f5' }}
     >
       <Header />
-      <LiveBar />
+
+      {/* overflow-hidden only on main — contains chat/sheets, doesn't clip TabBar orb */}
       <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {renderPage()}
+        {showConsent || isLeaving ? (
+          <ConsentModal
+            isLeaving={isLeaving}
+            onAccept={handleAccept}
+            onDecline={handleDecline}
+          />
+        ) : (
+          renderPage()
+        )}
       </main>
+
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )
