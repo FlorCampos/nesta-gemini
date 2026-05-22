@@ -15,7 +15,7 @@ export async function fetchAllSpeakers() {
         id,
         name,
         title,
-        company,
+        linkedin,
         bio,
         photo_url,
         session_id,
@@ -28,12 +28,11 @@ export async function fetchAllSpeakers() {
 
     if (error) throw error
 
-    // Formateamos los datos para que el frontend los consuma de forma limpia
     return data.map(speaker => ({
       id: speaker.id,
       name: speaker.name || 'Anonymous Speaker',
       role: speaker.title || 'Special Guest',
-      company: speaker.company || '',
+      linkedin: speaker.linkedin || '',
       bio: speaker.bio || 'No biography available at this moment.',
       // Si la foto es null o falla, usamos un avatar genérico elegante de respaldo
       photo: speaker.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',

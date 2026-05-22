@@ -1,290 +1,227 @@
 // pages/AgendaPage.jsx
-// Componente de Agenda Inteligente y Automatizada por Tiempo Real
 import { useState, useMemo, useEffect } from 'react'
 import { supabase, CHIP, B } from '../data/conference'
 
-// ── CONTROL DE SIMULACIÓN Y TIEMPO REAL ───────────────────────────────────────
-// Dado que los datos de tu archivo CSV pertenecen a Mayo y Junio del año 2026:
-// - Si SIMULATE_LIVE es true: El código forzará el reloj interno al '2026-05-30 a las 18:10'
-//   lo cual te permitirá ver la primera sesión ("Welcome and Opening") marcada como "● LIVE NOW" de inmediato.
-// - Si SIMULATE_LIVE es false: Usará el reloj exacto de tu computadora actual.
-const SIMULATE_LIVE = true
+const SIMULATE_LIVE  = false
+const SIMULATED_TIME = new Date('2026-05-30T18:05:00Z')
 
-// Listado global estandarizado para los chips de filtro superior
 const FILTERS = ['All', 'Keynote', 'Workshop', 'Panel', 'Talk', 'Networking']
 
-/**
- * Componente TypeChip
- * Renderiza etiquetas estilizadas según el tipo de sesión detectado en Supabase.
- * Soporta normalización de cadenas de texto para evitar fallos por mayúsculas.
- */
+// ── Formatters — always English, always Montreal TZ ───────────────────────────
+function fmtDate(date) {
+  return date.toLocaleDateString('en-US', {
+    timeZone: 'America/Montreal',
+    weekday: 'short', month: 'short', day: 'numeric',
+  })
+}
+function fmtTime(date) {
+  return date.toLocaleTimeString('en-US', {
+    timeZone: 'America/Montreal',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  })
+}
+
+function calcStatus(dateTimeISO, durationMinutes, now) {
+  try {
+    const start = new Date(dateTimeISO).getTime()
+    const end   = start + durationMinutes * 60_000
+    const t     = now.getTime()
+    if (t >= start && t <= end) return 'live'
+    if (t > end)                return 'past'
+    return 'upcoming'
+  } catch { return 'upcoming' }
+}
+
+// ── Render description with paragraph breaks ──────────────────────────────────
+// Splits on \n\n (blank lines) and single \n for list-style lines
+function DescriptionText({ text }) {
+  if (!text) return null
+
+  // Split into blocks by double newline first
+  const blocks = text.trim().split(/\n\n+/)
+
+  return (
+    <>
+      {blocks.map((block, bi) => {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
+
+        // Detect bullet-style lines (no full stop at end, or start with what/how/why etc)
+        // Heuristic: if block has multiple short lines, treat as a list
+        const isList = lines.length > 1 && lines.every(l => l.length < 120)
+
+        if (isList) {
+          return (
+            <ul key={bi} style={{ margin: '0 0 12px', paddingLeft: 18 }}>
+              {lines.map((line, li) => (
+                <li key={li} style={{ fontSize: 13, color: B.muted, lineHeight: 1.65, marginBottom: 3 }}>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        return (
+          <p key={bi} style={{ fontSize: 13, color: B.muted, lineHeight: 1.65, margin: '0 0 12px' }}>
+            {lines.join(' ')}
+          </p>
+        )
+      })}
+    </>
+  )
+}
+
+// ── TypeChip ──────────────────────────────────────────────────────────────────
 function TypeChip({ type }) {
-  const safeType = type || 'Talk'
-  // Convertimos a formato Título (Ej. 'talk' -> 'Talk') para que coincida con las llaves de CHIP
-  const normalizedType = safeType.charAt(0).toUpperCase() + safeType.slice(1).toLowerCase()
-  
-  // Si no se encuentra el color en la paleta, se aplica el color institucional por defecto
-  const styleConfig = CHIP[normalizedType] || CHIP[safeType] || { bg: B.nestaLight, color: B.nesta }
-  
+  const safe       = type || 'Talk'
+  const normalised = safe.charAt(0).toUpperCase() + safe.slice(1).toLowerCase()
+  const c          = CHIP[normalised] || CHIP[safe] || { bg: '#f2e8e5', color: '#b69088' }
   return (
     <span style={{
-      fontSize: 9,
-      fontWeight: 700,
-      padding: '3px 9px',
-      borderRadius: 6,
-      background: styleConfig.bg,
-      color: styleConfig.color,
-      letterSpacing: '0.02em',
-      display: 'inline-block'
+      fontSize: 9, fontWeight: 700,
+      padding: '2px 8px', borderRadius: 6,
+      background: c.bg, color: c.color,
+      display: 'inline-block',
     }}>
-      {safeType.toUpperCase()}
+      {safe.toUpperCase()}
     </span>
   )
 }
 
-/**
- * Componente DetailSheet (Bottom Sheet)
- * Muestra la información extendida de un evento cuando el usuario hace clic sobre él.
- * Integra la visualización condicional de la columna 'relevant_for'.
- */
+// ── Session detail sheet ──────────────────────────────────────────────────────
 function DetailSheet({ session, onClose }) {
   if (!session) return null
-  
+
+  const isOnline = !!session.online_link
+
   return (
-    <div style={{ 
-      position: 'fixed', 
-      inset: 0, 
-      zIndex: 100, 
-      display: 'flex', 
-      alignItems: 'flex-end', 
-      justifyContent: 'center' 
-    }}>
-      {/* Fondo oscuro traslúcido con desenfoque de fondo */}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div
-        style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'rgba(45,36,32,0.4)', 
-          backdropFilter: 'blur(5px)',
-          transition: 'all 0.3s ease'
-        }}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(45,36,32,0.4)', backdropFilter: 'blur(5px)' }}
         onClick={onClose}
       />
-
-      {/* Panel Contenedor Deslizable */}
       <div style={{
-        position: 'relative',
-        background: B.cream,
-        width: '100%',
-        maxWidth: 460,
+        position: 'relative', background: B.cream,
+        width: '100%', maxWidth: 448,
         borderRadius: '32px 32px 0 0',
-        padding: '26px 22px 50px',
-        maxHeight: '88vh',
-        overflowY: 'auto',
-        boxShadow: '0 -10px 25px -5px rgba(0,0,0,0.1)',
+        padding: '24px 20px',
+        // ✅ safe-area-inset-bottom so content clears Safari toolbar
+        paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 24px))',
+        maxHeight: '90vh', overflowY: 'auto',
         zIndex: 110,
+        animation: 'slideUp 0.28s ease',
+        boxSizing: 'border-box',
       }}>
-        {/* Indicador superior estético para simular un tirador de hoja móvil */}
-        <div style={{ 
-          width: 40, 
-          height: 4, 
-          background: B.mutedLight, 
-          borderRadius: 2, 
-          margin: '0 auto 22px' 
-        }} />
+        {/* Handle */}
+        <div style={{ width: 36, height: 4, background: B.mutedLight, borderRadius: 2, margin: '0 auto 20px' }} />
 
-        {/* Botón de cierre en la esquina superior derecha */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute', 
-            top: 22, 
-            right: 22,
-            border: 'none', 
-            background: 'rgba(0,0,0,0.03)', 
-            cursor: 'pointer', 
-            fontSize: 14, 
-            color: B.muted,
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold'
-          }}
-        >
+        {/* Close */}
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: B.muted, lineHeight: 1, padding: 4 }}>
           ✕
         </button>
 
-        <div style={{ marginBottom: 12 }}>
+        {/* Chip row — type + optional Online badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
           <TypeChip type={session.type} />
+          {isOnline && (
+            <span style={{
+              fontSize: 9, fontWeight: 700,
+              padding: '2px 8px', borderRadius: 6,
+              background: '#edf5e8', color: '#3d7040',
+              display: 'inline-block',
+            }}>
+              ONLINE
+            </span>
+          )}
         </div>
 
-        <h2 style={{ 
-          fontSize: 21, 
-          fontWeight: 700, 
-          color: B.charcoal, 
-          margin: '0 0 16px 0', 
-          lineHeight: 1.35 
-        }}>
+        {/* Title */}
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: B.charcoal, margin: '0 0 16px', lineHeight: 1.3 }}>
           {session.title}
         </h2>
 
-        {/* Faja de metadatos espaciales y temporales del evento */}
+        {/* Meta row */}
         <div style={{
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 10,
-          padding: '14px 0',
-          borderTop: '1px solid rgba(182,144,136,0.15)',
-          borderBottom: '1px solid rgba(182,144,136,0.15)',
-          marginBottom: 22,
+          display: 'flex', flexDirection: 'column', gap: 8,
+          padding: '12px 0',
+          borderTop: '0.5px solid rgba(182,144,136,0.15)',
+          borderBottom: '0.5px solid rgba(182,144,136,0.15)',
+          marginBottom: 20,
         }}>
-          <div style={{ fontSize: 12, color: B.muted, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14 }}>🗓</span> 
-            <span style={{ fontWeight: 600, color: B.charcoal }}>{session.dateDisplay}</span>
-            <span style={{ color: B.mutedLight }}>•</span>
-            <span>{session.timeDisplay} ({session.duration_minutes} min)</span>
+          <div style={{ fontSize: 11, color: B.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: B.nesta }}>🕐</span>
+            <strong style={{ color: B.charcoal }}>{session.dateDisplay}</strong>
+            <span style={{ color: B.mutedLight }}>·</span>
+            <span>{session.timeDisplay}</span>
           </div>
-          
-          <div style={{ fontSize: 12, color: B.muted, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <span style={{ fontSize: 14, marginTop: -1 }}>📍</span> 
-            <span style={{ lineHeight: 1.4 }}>{session.location || 'Location To Be Determined'}</span>
+          <div style={{ fontSize: 11, color: B.muted, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+            <span style={{ color: B.nesta, marginTop: 1 }}>📍</span>
+            <span style={{ lineHeight: 1.4 }}>{session.location || 'TBD'}</span>
           </div>
-        </div>
-
-        {/* Bloque descriptivo */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ 
-            fontSize: 9, 
-            fontWeight: 800, 
-            color: B.nesta, 
-            letterSpacing: '0.14em', 
-            textTransform: 'uppercase', 
-            marginBottom: 8 
-          }}>
-            About this Session
-          </div>
-          <p style={{ 
-            fontSize: 13, 
-            color: B.charcoal, 
-            lineHeight: 1.7, 
-            margin: 0,
-            opacity: 0.9
-          }}>
-            {session.description || 'No supplementary details provided for this itinerary segment.'}
-          </p>
-        </div>
-
-        {/* NUEVA COLUMNA: Relevant For integrada en el panel desplegable */}
-        {session.relevant_for && (
-          <div style={{ 
-            background: B.white, 
-            borderRadius: 16, 
-            border: '1px solid rgba(182,144,136,0.18)', 
-            padding: '14px 16px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.01)'
-          }}>
-            <div style={{ 
-              fontSize: 9, 
-              fontWeight: 800, 
-              color: B.nesta, 
-              letterSpacing: '0.14em', 
-              textTransform: 'uppercase', 
-              marginBottom: 6 
-            }}>
-              Target Audience / Relevant For
+          {session.speaker && session.speaker !== 'None' && (
+            <div style={{ fontSize: 11, color: B.muted, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+              <span style={{ color: B.nesta }}>👤</span>
+              <span>{session.speaker}</span>
             </div>
-            <p style={{ 
-              fontSize: 12, 
-              color: B.charcoal, 
-              fontWeight: 600, 
-              fontStyle: 'italic', 
-              margin: 0,
-              lineHeight: 1.4
+          )}
+        </div>
+
+        {/* Description — rendered as paragraphs/lists */}
+        {session.description && (
+          <div style={{ marginBottom: isOnline ? 20 : 0 }}>
+            <div style={{
+              fontSize: 9, fontWeight: 700, color: B.nesta,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              marginBottom: 10,
             }}>
-              🎯 {session.relevant_for}
-            </p>
+              About this Session
+            </div>
+            <DescriptionText text={session.description} />
           </div>
+        )}
+
+        {/* ✅ Join Online button — shown only when online_link exists */}
+        {isOnline && (
+          <a
+            href={session.online_link}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%', padding: '13px 0',
+              borderRadius: 12,
+              background: B.nesta, color: '#fff',
+              fontSize: 13, fontWeight: 600,
+              textDecoration: 'none',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Video camera icon */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            Join Online Session
+          </a>
         )}
       </div>
     </div>
   )
 }
 
-/**
- * Componente ConflictBlock
- * Gestiona escenarios donde dos o más conferencias comparten el mismo intervalo de tiempo exacto.
- * Divide el espacio en columnas interactivas para que el usuario seleccione la de su interés.
- */
+// ── Conflict block ────────────────────────────────────────────────────────────
 function ConflictBlock({ sessions, onSelect }) {
   return (
-    <div style={{ 
-      background: B.conflictBg, 
-      borderRadius: 16, 
-      overflow: 'hidden', 
-      border: '1px solid rgba(208,112,96,0.25)', 
-      borderLeft: `4px solid ${B.conflict}`,
-      boxShadow: '0 2px 6px rgba(208,112,96,0.03)'
-    }}>
-      <div style={{ 
-        padding: '8px 14px', 
-        background: 'rgba(208,112,96,0.05)', 
-        borderBottom: '1px solid rgba(208,112,96,0.15)', 
-        fontSize: 10, 
-        color: B.conflictTxt, 
-        fontWeight: 700,
-        letterSpacing: '0.02em'
-      }}>
-        {sessions.length} parallel events detected — choose one to explore
+    <div style={{ background: B.conflictBg, borderRadius: 14, overflow: 'hidden', border: '0.5px solid rgba(200,90,70,0.3)', borderLeft: `3px solid ${B.conflict}` }}>
+      <div style={{ padding: '6px 12px', background: 'rgba(208,112,96,0.07)', borderBottom: '0.5px solid rgba(200,90,70,0.2)', fontSize: 10, color: B.conflictTxt, fontWeight: 600 }}>
+        {sessions.length} sessions at the same time — pick one
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', divideX: '1px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
         {sessions.map((s, i) => (
-          <div 
-            key={s.id || i} 
-            onClick={() => onSelect(s)} 
-            style={{ 
-              padding: '12px 14px', 
-              borderRight: i < sessions.length - 1 ? '1px solid rgba(208,112,96,0.12)' : 'none', 
-              cursor: 'pointer',
-              background: 'transparent',
-              transition: 'background 0.2s ease',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(250,250,250,0.5)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <div style={{ marginBottom: 6 }}><TypeChip type={s.type} /></div>
-            
-            <div style={{ 
-              fontSize: 12, 
-              fontWeight: 600, 
-              color: B.charcoal, 
-              lineHeight: 1.4, 
-              marginBottom: 6 
-            }}>
-              {s.title}
-            </div>
-
-            {/* Inclusión de Relevant For dentro de las subdivisiones por colisión */}
-            {s.relevant_for && (
-              <div style={{ 
-                fontSize: 10, 
-                color: B.nesta, 
-                fontWeight: 500, 
-                fontStyle: 'italic', 
-                marginBottom: 6 
-              }}>
-                🎯 {s.relevant_for}
-              </div>
-            )}
-            
-            {s.speaker && s.speaker !== 'None' && (
-              <div style={{ fontSize: 10, color: B.muted, fontWeight: 500 }}>
-                👤 {s.speaker}
-              </div>
-            )}
+          <div key={s.id || i} onClick={() => onSelect(s)} style={{ padding: '10px 11px', borderRight: i < sessions.length - 1 ? '0.5px solid rgba(200,90,70,0.15)' : 'none', cursor: 'pointer' }}>
+            <div style={{ marginBottom: 4 }}><TypeChip type={s.type} /></div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: B.charcoal, lineHeight: 1.35, marginBottom: 4 }}>{s.title}</div>
+            {s.speaker && s.speaker !== 'None' && <div style={{ fontSize: 9, color: B.muted }}>{s.speaker}</div>}
           </div>
         ))}
       </div>
@@ -292,95 +229,51 @@ function ConflictBlock({ sessions, onSelect }) {
   )
 }
 
-/**
- * Componente SessionCard
- * Representa de forma individual cada bloque programático estándar.
- * Controla visualmente los estados Activo ("LIVE NOW") y Expirado ("Past") dinámicamente.
- */
+// ── Session card ──────────────────────────────────────────────────────────────
 function SessionCard({ session, onSelect }) {
-  const isLive = session.status === 'live'
-  const isPast = session.status === 'past'
+  const isLive   = session.status === 'live'
+  const isPast   = session.status === 'past'
+  const isOnline = !!session.online_link
 
   return (
     <div
       onClick={() => onSelect(session)}
       style={{
-        padding: '14px 16px', 
-        background: isLive ? '#fffbfa' : B.white, 
-        borderRadius: 16,
-        border: `1px solid ${isLive ? 'rgba(208,112,96,0.35)' : 'rgba(182,144,136,0.18)'}`,
-        boxShadow: isLive ? '0 4px 12px rgba(208,112,96,0.06)' : '0 2px 4px rgba(0,0,0,0.01)',
-        ...(isLive ? { borderLeft: `4px solid ${B.conflict}` } : {}), 
-        opacity: isPast ? 0.55 : 1, 
-        marginBottom: 10, 
-        cursor: 'pointer',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+        padding: '11px 13px',
+        background: isLive ? '#fffaf9' : B.white,
+        borderRadius: 14,
+        border: `0.5px solid ${isLive ? 'rgba(182,144,136,0.5)' : 'rgba(182,144,136,0.2)'}`,
+        ...(isLive ? { borderLeft: `3px solid ${B.nesta}` } : {}),
+        opacity: isPast ? 0.6 : 1,
+        marginBottom: 8, cursor: 'pointer',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      {/* Type chip + optional Online badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
         <TypeChip type={session.type} />
-        
-        {/* INDICADOR LIVE NOW AUTOMÁTICO CONTROLADO POR EL RELOJ MATEMÁTICO */}
-        {isLive && (
-          <span style={{ 
-            fontSize: 9, 
-            fontWeight: 800, 
-            color: '#d07060', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 5,
-            letterSpacing: '0.04em'
+        {isOnline && (
+          <span style={{
+            fontSize: 8, fontWeight: 700,
+            padding: '2px 6px', borderRadius: 5,
+            background: '#edf5e8', color: '#3d7040',
           }}>
-            <span style={{ 
-              width: 6, 
-              height: 6, 
-              borderRadius: '50%', 
-              background: '#d07060', 
-              display: 'inline-block' 
-            }} />
-            LIVE NOW
+            ONLINE
           </span>
         )}
       </div>
 
-      <div style={{ 
-        fontSize: 13, 
-        fontWeight: 700, 
-        lineHeight: 1.4, 
-        marginBottom: 6, 
-        color: isPast ? B.muted : B.charcoal 
-      }}>
+      {/* Title */}
+      <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.4, marginBottom: 6, color: isPast ? B.muted : B.charcoal }}>
         {session.title}
       </div>
 
-      {/* RENDERIZADO AUTOMÁTICO DE LA COLUMNA RELEVANT FOR */}
-      {session.relevant_for && (
-        <div style={{ 
-          fontSize: 10, 
-          color: B.nesta, 
-          fontWeight: 600, 
-          marginBottom: 8, 
-          fontStyle: 'italic' 
-        }}>
-          🎯 {session.relevant_for}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 4 }}>
-        <span style={{ fontSize: 11, color: B.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
-          📍 {session.location || 'TBD'}
+      {/* Location + speaker */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <span style={{ fontSize: 10, color: B.muted, flex: 1, lineHeight: 1.4 }}>
+          {session.location || 'TBD'}
         </span>
         {session.speaker && session.speaker !== 'None' && (
-          <span style={{ 
-            fontSize: 11, 
-            color: B.muted, 
-            textAlign: 'right', 
-            fontWeight: 600,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            maxWidth: '40%'
-          }}>
+          <span style={{ fontSize: 10, color: B.muted, textAlign: 'right', fontWeight: 500, flex: 1, lineHeight: 1.4, wordBreak: 'break-word' }}>
             {session.speaker}
           </span>
         )}
@@ -389,267 +282,150 @@ function SessionCard({ session, onSelect }) {
   )
 }
 
-/**
- * Componente Raíz: AgendaPage
- * Ejecuta las consultas de datos asíncronas hacia Supabase, monta los observadores de tiempo,
- * procesa linealmente los estados temporales de cada evento y agrupa visualmente los elementos.
- */
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function AgendaPage() {
-  const [filter, setFilter] = useState('All')
-  const [selected, setSelected] = useState(null)
+  const [filter,     setFilter]     = useState('All')
+  const [selected,   setSelected]   = useState(null)
   const [agendaData, setAgendaData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [systemTime, setSystemTime] = useState(new Date())
+  const [loading,    setLoading]    = useState(true)
+  const [now,        setNow]        = useState(new Date())
 
-  // Observador de Tiempo Continuo: Forzamos la reevaluación del estado de la app cada 15 segundos
   useEffect(() => {
-    const clockInterval = setInterval(() => {
-      setSystemTime(new Date())
-    }, 15000)
-    
-    return () => clearInterval(clockInterval)
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
   }, [])
 
-  // Consumidor de Datos de la Base de Datos Externa (Supabase)
   useEffect(() => {
-    async function loadConferenceData() {
+    async function load() {
       try {
         setLoading(true)
-        // Apuntamos directo a tu tabla relacional mapeando todo el universo de filas
         const { data, error } = await supabase
           .from('conference')
           .select('*')
-          
+          .order('date_time', { ascending: true })
         if (error) throw error
         if (data) setAgendaData(data)
       } catch (err) {
-        console.error("Critical error mapping data from Supabase storage:", err.message)
+        console.error('AgendaPage fetch error:', err.message)
       } finally {
         setLoading(false)
       }
     }
-    loadConferenceData()
+    load()
   }, [])
 
-  // Gestor del tiempo actual según la configuración del entorno (Simulado o Local Real)
-  const currentTime = useMemo(() => {
-    if (SIMULATE_LIVE) {
-      // Clavamos las manecillas del reloj de JavaScript al primer día del evento (30 de Mayo, 2026 a las 18:10 UTC)
-      // Esto interceptará la primera fila del CSV y gatillará el disparador automático "LIVE NOW".
-      return new Date('2026-05-30T18:10:00Z')
-    }
-    return systemTime
-  }, [systemTime])
+  const currentTime = SIMULATE_LIVE ? SIMULATED_TIME : now
 
-  /**
-   * pipeline de Procesamiento processedAgenda (useMemo):
-   * Cruza de manera matemática los Timestamps globales transformando strings de Supabase a objetos operables.
-   */
   const processedAgenda = useMemo(() => {
-    return agendaData.map(sessionItem => {
-      // Instanciamos el hito cronológico exacto provisto por la celda 'date_time'
-      const startDate = new Date(sessionItem.date_time)
-      const executionMinutes = sessionItem.duration_minutes || 30
-      
-      // Calculamos la hora de clausura de la sesión añadiéndole los minutos transformados a milisegundos
-      const endDate = new Date(startDate.getTime() + executionMinutes * 60000)
+    return agendaData.map(item => {
+      const startDate       = new Date(item.date_time)
+      const durationMinutes = item.duration_minutes || 30
+      const endDate         = new Date(startDate.getTime() + durationMinutes * 60_000)
 
-      // Convertimos los hitos a cadenas de lectura amigable para el diseño en español
-      const dateDisplay = startDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-      const startStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-      const endStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-      const timeDisplay = `${startStr} - ${endStr}`
-
-      // EVALUADOR MATEMÁTICO INTEGRAL DE ESTADO CRONOLÓGICO
-      let currentStatus = 'upcoming'
-      const currentTimestampMs = currentTime.getTime()
-      const eventStartTimestampMs = startDate.getTime()
-      const eventEndTimestampMs = endDate.getTime()
-
-      if (currentTimestampMs >= eventStartTimestampMs && currentTimestampMs <= eventEndTimestampMs) {
-        currentStatus = 'live'
-      } else if (currentTimestampMs > eventEndTimestampMs) {
-        currentStatus = 'past'
-      }
+      const dateDisplay = fmtDate(startDate)
+      const startStr    = fmtTime(startDate)
+      const endStr      = fmtTime(endDate)
+      const timeDisplay = `${startStr} – ${endStr}`
+      const status      = calcStatus(item.date_time, durationMinutes, currentTime)
 
       return {
-        ...sessionItem,
-        type: sessionItem.session_type || 'Talk', // Enlace con la columna real de tu base de datos
+        ...item,
+        type:         item.session_type || item.type || 'Talk',
         dateDisplay,
         timeDisplay,
-        // Combinación unificada para la clave de agrupamiento cronológico en pantalla
-        groupKey: `${dateDisplay} · ${startStr}`,
-        startTimeRaw: eventStartTimestampMs,
-        status: currentStatus
+        groupKey:     `${dateDisplay} · ${startStr}`,
+        startTimeRaw: startDate.getTime(),
+        status,
+        // ✅ Pass online_link through — it comes from Supabase select('*')
+        online_link:  item.online_link || null,
       }
     })
   }, [agendaData, currentTime])
 
-  /**
-   * pipeline de Agrupamiento grouped (useMemo):
-   * Filtra las categorías y segmenta la agenda por llaves horarias compartidas para detectar colisiones.
-   */
   const grouped = useMemo(() => {
-    // Aplicamos el discriminador por chips superiores de categoría
-    const filteredResults = filter === 'All'
+    const filtered = filter === 'All'
       ? processedAgenda
-      : processedAgenda.filter(s => s.type.toLowerCase() === filter.toLowerCase())
+      : processedAgenda.filter(s => (s.type || '').toLowerCase() === filter.toLowerCase())
 
-    // Ordenamos de manera ascendente para asegurar la coherencia del flujo de lectura
-    const sortedChronologically = [...filteredResults].sort((a, b) => a.startTimeRaw - b.startTimeRaw)
-
-    // Agrupamiento asociativo mediante estructura Map nativa
-    const mappingGroup = new Map()
-    sortedChronologically.forEach(item => {
-      const uniqueKey = item.groupKey
-      if (!mappingGroup.has(uniqueKey)) {
-        mappingGroup.set(uniqueKey, [])
-      }
-      mappingGroup.get(uniqueKey).push(item)
+    const map = new Map()
+    const sorted = [...filtered].sort((a, b) => a.startTimeRaw - b.startTimeRaw)
+    sorted.forEach(s => {
+      if (!map.has(s.groupKey)) map.set(s.groupKey, [])
+      map.get(s.groupKey).push(s)
     })
-    
-    return Array.from(mappingGroup.entries())
+    return Array.from(map.entries())
   }, [filter, processedAgenda])
 
-  // Estado de carga intermedio
   if (loading) {
     return (
-      <div style={{ 
-        padding: '60px 20px', 
-        color: B.muted, 
-        textAlign: 'center', 
-        fontSize: 13,
-        fontWeight: 500,
-        letterSpacing: '0.01em'
-      }}>
-        Estableciendo conexión y mapeando agenda de Supabase...
+      <div style={{ padding: '60px 20px', color: B.muted, textAlign: 'center', fontSize: 13 }}>
+        Loading sessions…
       </div>
     )
   }
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto" style={{ padding: '14px 16px 100px' }}>
-        
-        {/* Barra de Navegación Horizontal de Filtros */}
-        <div style={{ 
-          display: 'flex', 
-          gap: 6, 
-          overflowX: 'auto', 
-          paddingBottom: 6, 
-          marginBottom: 16, 
-          scrollbarWidth: 'none' 
-        }}>
-          {FILTERS.map(filterKey => {
-            const isTabActive = filter === filterKey
+      <div className="flex-1 overflow-y-auto" style={{ padding: '14px 16px 100px', background: B.cream }}>
+
+        {/* Filter chips */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14, scrollbarWidth: 'none' }}>
+          {FILTERS.map(f => {
+            const active = filter === f
             return (
-              <button
-                key={filterKey}
-                onClick={() => setFilter(filterKey)}
-                style={{
-                  flexShrink: 0,
-                  padding: '6px 14px',
-                  borderRadius: 18,
-                  border: `1px solid ${isTabActive ? B.nesta : 'rgba(182,144,136,0.3)'}`,
-                  background: isTabActive ? B.nesta : 'transparent',
-                  color: isTabActive ? '#fff' : B.muted,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  lineHeight: '1.3',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {filterKey}
+              <button key={f} onClick={() => setFilter(f)} style={{
+                flexShrink: 0, padding: '5px 13px', borderRadius: 16,
+                border: `0.5px solid ${active ? B.nesta : 'rgba(182,144,136,0.35)'}`,
+                background: active ? B.nesta : 'transparent',
+                color: active ? '#fff' : B.muted,
+                fontSize: 10, fontWeight: 600, cursor: 'pointer', lineHeight: '1.4',
+              }}>
+                {f}
               </button>
             )
           })}
         </div>
 
-        {/* Renderizado de Bloques Condicionales de la Agenda */}
+        {/* Time blocks */}
         {grouped.length === 0 ? (
-          <div style={{ 
-            color: B.muted, 
-            fontSize: 12, 
-            textAlign: 'center', 
-            marginTop: 40,
-            fontWeight: 500 
-          }}>
-            No se encontraron eventos activos en la categoría seleccionada.
+          <div style={{ color: B.muted, fontSize: 12, textAlign: 'center', marginTop: 40 }}>
+            No sessions in this category.
           </div>
         ) : (
-          grouped.map(([groupKey, sessionGroup]) => {
-            // Evaluamos si alguna de las subsesiones en el bloque está en vivo actualmente
-            const isBlockLive = sessionGroup.some(s => s.status === 'live')
-            const isBlockPast = sessionGroup.every(s => s.status === 'past')
-            const isConflictDetected = sessionGroup.length > 1
+          grouped.map(([groupKey, sessions]) => {
+            const isLive     = sessions.some(s => s.status === 'live')
+            const isPast     = sessions.every(s => s.status === 'past')
+            const isConflict = sessions.length > 1
 
             return (
-              <div key={groupKey} style={{ marginBottom: 18 }}>
-                
-                {/* Cabecera Temporal del Bloque (Imprime Día + Hora de Inicio) */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 8, 
-                  marginBottom: 10 
-                }}>
-                  {isBlockLive && (
-                    <div style={{ 
-                      width: 7, 
-                      height: 7, 
-                      borderRadius: '50%', 
-                      background: '#d07060'
-                    }} />
+              <div key={groupKey} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                  {isLive && (
+                    <>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: B.nesta, animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite' }} />
+                      <span style={{ fontSize: 10, fontWeight: 800, color: B.nesta, letterSpacing: '0.05em' }}>LIVE NOW</span>
+                    </>
                   )}
-                  
-                  <span style={{ 
-                    fontSize: 11, 
-                    fontWeight: 700, 
-                    color: isBlockLive ? '#d07060' : isBlockPast ? '#c0aeaa' : '#5a4a46',
-                    letterSpacing: '0.01em'
-                  }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: isLive ? B.nesta : isPast ? '#c0aeaa' : '#5a4a46' }}>
                     {groupKey}
                   </span>
-
-                  {isConflictDetected && (
-                    <div style={{ 
-                      marginLeft: 'auto', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 4, 
-                      background: '#fff6f5', 
-                      padding: '3px 9px', 
-                      borderRadius: 12, 
-                      border: '1px solid rgba(208,112,96,0.2)' 
-                    }}>
-                      <span style={{ fontSize: 9, color: B.conflictTxt, fontWeight: 800 }}>
-                        ⚠ TIMING CONFLICT
-                      </span>
+                  {isConflict && (
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, background: '#fff5f3', padding: '2px 8px', borderRadius: 10, border: '0.5px solid rgba(200,90,70,0.3)' }}>
+                      <span style={{ fontSize: 9, color: B.conflictTxt, fontWeight: 700 }}>⚠ Scheduling conflict</span>
                     </div>
                   )}
                 </div>
 
-                {/* bifurcación de diseño: Bloque de Conflicto Colectivo o Tarjeta Simple */}
-                {isConflictDetected ? (
-                  <ConflictBlock sessions={sessionGroup} onSelect={setSelected} />
-                ) : (
-                  sessionGroup.map((singleSession, idx) => (
-                    <SessionCard 
-                      key={singleSession.id || idx} 
-                      session={singleSession} 
-                      onSelect={setSelected} 
-                    />
-                  ))
-                )}
-                
+                {isConflict
+                  ? <ConflictBlock sessions={sessions} onSelect={setSelected} />
+                  : sessions.map((s, idx) => <SessionCard key={s.id || idx} session={s} onSelect={setSelected} />)
+                }
               </div>
             )
           })
         )}
       </div>
 
-      {/* Hoja desplegable inferior para visualización extendida del itinerario */}
       <DetailSheet session={selected} onClose={() => setSelected(null)} />
     </>
   )
