@@ -8,21 +8,16 @@ import SpeakersPage from './pages/SpeakersPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ShowcasePage from './pages/ShowcasePage'
 
-const CONSENT_KEY = 'nesta_consent_given'
+const CONSENT_KEY = 'aati_consent_given'  // updated from nesta_consent_given
 
 function App() {
   const [activeTab, setActiveTab] = useState('agenda')
 
-  // Only true/null — we don't store false anymore.
-  // If the user closes with X, they just go back to Agenda.
-  // Next time they tap Nesta, the modal appears again.
   const [consentGiven, setConsentGiven] = useState(() =>
     localStorage.getItem(CONSENT_KEY) === 'true'
   )
-
   const [isLeaving, setIsLeaving] = useState(false)
 
-  // Show modal when user taps Nesta AND hasn't accepted yet
   const showConsent = activeTab === 'nesta' && !consentGiven
 
   const handleAccept = () => {
@@ -34,8 +29,6 @@ function App() {
     }, 420)
   }
 
-  // X button: just go back to Agenda — don't store anything
-  // so the modal appears again next time they tap Nesta
   const handleDecline = () => {
     setIsLeaving(true)
     setTimeout(() => {
@@ -44,7 +37,6 @@ function App() {
     }, 280)
   }
 
-  // ── Viewport layout (iOS Safari keyboard) ─────────────────────────────────
   const [appStyle, setAppStyle] = useState({
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
   })
@@ -88,13 +80,8 @@ function App() {
   }
 
   return (
-    <div
-      className="flex flex-col"
-      style={{ ...appStyle, background: '#faf7f5' }}
-    >
+    <div className="flex flex-col" style={{ ...appStyle, background: '#faf7f5' }}>
       <Header />
-
-      {/* overflow-hidden only on main — contains chat/sheets, doesn't clip TabBar orb */}
       <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {showConsent || isLeaving ? (
           <ConsentModal
@@ -106,7 +93,6 @@ function App() {
           renderPage()
         )}
       </main>
-
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )

@@ -1,5 +1,4 @@
 // components/TabBar.jsx
-// ✅ SVG icons (no emojis), elevated Nesta orb, correct safe-area padding
 
 const AgendaIcon = ({ active }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -40,13 +39,6 @@ const ShowcaseIcon = ({ active }) => (
   </svg>
 )
 
-const ChatIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-    stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-  </svg>
-)
-
 function NavBtn({ active, onClick, icon, label }) {
   return (
     <button
@@ -71,12 +63,10 @@ function NavBtn({ active, onClick, icon, label }) {
 
 export default function TabBar({ activeTab, onTabChange }) {
   return (
-    // ✅ overflow: visible so the Nesta orb (negative margin) isn't clipped
     <div
       className="shrink-0 flex items-end bg-white w-full"
       style={{
         borderTop: '0.5px solid rgba(182,144,136,0.25)',
-        // Safe area for iPhone home bar + a little breathing room
         paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
         overflow: 'visible',
         position: 'relative',
@@ -86,14 +76,8 @@ export default function TabBar({ activeTab, onTabChange }) {
       <NavBtn active={activeTab === 'agenda'}    onClick={() => onTabChange('agenda')}    icon={<AgendaIcon    active={activeTab === 'agenda'}    />} label="Agenda"    />
       <NavBtn active={activeTab === 'speakers'}  onClick={() => onTabChange('speakers')}  icon={<SpeakersIcon  active={activeTab === 'speakers'}  />} label="Speakers"  />
 
-      {/* ── Nesta orb — elevated above the tab bar ── */}
-      <div
-        style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', position: 'relative',
-          paddingTop: 8,
-        }}
-      >
+      {/* AAtI centre orb — uses butterfly favicon */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', paddingTop: 8 }}>
         <button
           onClick={() => onTabChange('nesta')}
           style={{
@@ -102,14 +86,25 @@ export default function TabBar({ activeTab, onTabChange }) {
             border: '3px solid #faf7f5',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
-            // Lift the orb above the bar
             marginTop: -26,
             boxShadow: '0 4px 16px rgba(182,144,136,0.55)',
             transition: 'background 0.15s',
             flexShrink: 0,
+            padding: 0,
+            overflow: 'hidden',
           }}
         >
-          <ChatIcon />
+          {/* Butterfly favicon in the orb */}
+          <img
+            src="/AAtI-Favicon.png"
+            alt="AAtI"
+            style={{
+              width: 26, height: 26,
+              objectFit: 'contain',
+              // The favicon has a black background — invert to white for the orb
+              filter: 'brightness(0) invert(1)',
+            }}
+          />
         </button>
         <span style={{
           fontSize: 8, fontWeight: 600,
@@ -117,7 +112,7 @@ export default function TabBar({ activeTab, onTabChange }) {
           textTransform: 'uppercase', letterSpacing: '0.05em',
           marginTop: 4,
         }}>
-          Nesta
+          AAtI
         </span>
       </div>
 
