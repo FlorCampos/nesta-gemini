@@ -32,22 +32,14 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
         position: 'relative',
       }}
     >
-      {/* ✅ X button — top right, sends to Agenda */}
+      {/* X button */}
       <button
         onClick={onDecline}
         style={{
-          position: 'absolute',
-          top: 16,
-          right: 18,
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          border: 'none',
-          background: 'rgba(182,144,136,0.12)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'absolute', top: 16, right: 18,
+          width: 32, height: 32, borderRadius: '50%',
+          border: 'none', background: 'rgba(182,144,136,0.12)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 10,
         }}
       >
@@ -58,14 +50,7 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
         </svg>
       </button>
 
-      {/* Content — centered vertically */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px 32px',   // top padding accounts for the X button
-      }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 24px 32px' }}>
         <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column' }}>
 
           {/* Logo + title */}
@@ -77,7 +62,7 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
               Before we chat
             </h2>
             <p style={{ fontSize: 12, color: '#8a7572', lineHeight: 1.65, margin: 0 }}>
-              Nesta learns from conversations to improve programs for women like you.
+              AAtI learns from conversations to improve programs for women like you.
             </p>
           </div>
 
@@ -86,16 +71,11 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
             {items.map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{
-                  width: '20px',
-                  height: '20px',
-                  minWidth: '20px',
+                  width: '20px', height: '20px', minWidth: '20px',
                   borderRadius: '50%',
                   background: item.ok ? '#edf5e8' : '#fdf0ee',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: '1px',
-                  flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginTop: '1px', flexShrink: 0,
                 }}>
                   {item.ok ? (
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
@@ -117,27 +97,22 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
             ))}
           </div>
 
-          {/* Divider */}
           <div style={{ height: '0.5px', background: 'rgba(182,144,136,0.3)', marginBottom: 22 }} />
 
-          {/* Accept only — no decline button */}
           <button
             onClick={onAccept}
             style={{
-              width: '100%',
-              padding: '14px 0',
-              borderRadius: 12,
-              border: 'none',
-              background: '#b69088',
-              color: '#ffffff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
+              width: '100%', padding: '14px 0', borderRadius: 12,
+              border: 'none', background: '#b69088',
+              color: '#ffffff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
             }}
           >
-            Start chatting with Nesta
+            Start chatting with AAtI
           </button>
 
+          <p style={{ textAlign: 'center', fontSize: 10, color: '#d4c0bc', marginTop: 14 }}>
+            You can change this anytime in settings
+          </p>
         </div>
       </div>
     </div>

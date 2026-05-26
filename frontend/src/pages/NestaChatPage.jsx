@@ -8,7 +8,7 @@ const INITIAL_MESSAGES = [
   {
     id: 1,
     sender: 'nesta',
-    text: "Hi! I'm Nesta 😊. I can help you navigate today's sessions, explore career paths, or learn about programs designed for women like you.",
+    text: "Hi! I'm AAtI 😊. I can help you navigate today's sessions, explore career paths, or learn about programs designed for women like you.",
   },
 ]
 
@@ -32,10 +32,7 @@ export default function NestaChatPage({ consentGiven }) {
     if (intervalRef.current) return
     intervalRef.current = setInterval(() => {
       if (displayedRef.current.length < bufferRef.current.length) {
-        const next = bufferRef.current.slice(
-          displayedRef.current.length,
-          displayedRef.current.length + 2,
-        )
+        const next = bufferRef.current.slice(displayedRef.current.length, displayedRef.current.length + 2)
         displayedRef.current += next
         const text = displayedRef.current
         const id   = nestaIdRef.current
@@ -64,14 +61,12 @@ export default function NestaChatPage({ consentGiven }) {
     try {
       // ✅ Correct 5-param call matching the updated nestaApi.js signature
       await sendMessageStream(
-        input,
-        'default',
-        consentGiven === true,
+        input, 'default', consentGiven === true,
         chunk => { bufferRef.current += chunk; startTyping() },
         ()    => { setIsLoading(false) },
       )
     } catch (err) {
-      console.error('Nesta stream error:', err)
+      console.error('AAtI stream error:', err)
       setMessages(prev =>
         prev.map(m =>
           m.id === nestaId
@@ -88,50 +83,33 @@ export default function NestaChatPage({ consentGiven }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
-      {/* Messages area */}
-      <div
-        className="chat-scroll"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: 'auto',
-          background: '#faf7f5',
-          padding: '18px 0 12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        {messages.map(msg => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
+      {/* Messages */}
+      <div className="chat-scroll" style={{
+        flex: 1, minHeight: 0, overflowY: 'auto',
+        background: '#faf7f5',
+        padding: '18px 0 12px',
+        display: 'flex', flexDirection: 'column', gap: 10,
+      }}>
+        {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
 
         {isLoading && bufferRef.current === '' && (
-          <div style={{ paddingLeft: 4 }}>
-            <TypingIndicator />
-          </div>
+          <div style={{ paddingLeft: 4 }}><TypingIndicator /></div>
         )}
 
         <div ref={chatEndRef} />
       </div>
 
       {/* Input bar */}
-      <div
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: 8,
-          padding: '8px 12px 10px',
-          borderTop: '0.5px solid rgba(182,144,136,0.2)',
-          background: '#ffffff',
-        }}
-      >
+      <div style={{
+        flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 8,
+        padding: '8px 12px 10px',
+        borderTop: '0.5px solid rgba(182,144,136,0.2)',
+        background: '#ffffff',
+      }}>
         <textarea
           ref={textareaRef}
           value={input}
           onFocus={() => {
-            // Fix iOS Safari scroll displacement when keyboard opens
             setTimeout(() => { window.scrollTo(0, 0); document.body.scrollTop = 0 }, 50)
             setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, 300)
           }}
@@ -141,31 +119,20 @@ export default function NestaChatPage({ consentGiven }) {
             e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'
           }}
           onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
           }}
-          placeholder="Ask Nesta anything..."
+          placeholder="Ask AAtI anything..."
           disabled={isLoading}
           rows={1}
           style={{
-            flex: 1,
-            padding: '8px 12px',
-            borderRadius: 18,
+            flex: 1, padding: '8px 12px', borderRadius: 18,
             border: '0.5px solid rgba(182,144,136,0.3)',
             background: '#faf7f5',
-            // ✅ 16px prevents iOS Safari auto-zoom on focus (BUG 1 from QA doc)
-            fontSize: '16px',
+            fontSize: '16px',   // prevents iOS Safari auto-zoom
             color: '#2d2420',
-            resize: 'none',
-            outline: 'none',
-            fontFamily: 'inherit',
-            lineHeight: 1.45,
-            maxHeight: 100,
-            overflowY: 'auto',
-            opacity: isLoading ? 0.5 : 1,
-            transition: 'border 0.15s',
+            resize: 'none', outline: 'none', fontFamily: 'inherit',
+            lineHeight: 1.45, maxHeight: 100, overflowY: 'auto',
+            opacity: isLoading ? 0.5 : 1, transition: 'border 0.15s',
           }}
           onFocus={e => (e.target.style.border = '0.5px solid #b69088')}
           onBlur={e  => (e.target.style.border = '0.5px solid rgba(182,144,136,0.3)')}
@@ -175,12 +142,9 @@ export default function NestaChatPage({ consentGiven }) {
           onClick={handleSend}
           disabled={isLoading || !hasInput}
           style={{
-            width: 34, height: 34,
-            borderRadius: '50%',
-            flexShrink: 0,
+            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
             background: hasInput && !isLoading ? '#b69088' : '#d4c0bc',
-            border: 'none',
-            cursor: hasInput && !isLoading ? 'pointer' : 'default',
+            border: 'none', cursor: hasInput && !isLoading ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.18s',
           }}

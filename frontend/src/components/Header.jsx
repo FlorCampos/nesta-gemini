@@ -1,43 +1,37 @@
 // components/Header.jsx
-import NestaLogo from './NestaLogo'
-
 export default function Header() {
   return (
-    <div
-      style={{
-        background: '#faf7f5',
-        borderBottom: '0.5px solid rgba(182,144,136,0.3)',
-        padding: '12px 18px 11px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 11,
-        flexShrink: 0,
-      }}
-    >
-      {/* Real Nesta SVG mark — bigger for mobile */}
-      <NestaLogo size={40} />
+    <div style={{
+      background: '#faf7f5',
+      borderBottom: '0.5px solid rgba(182,144,136,0.3)',
+      padding: '11px 18px 10px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 2,
+      flexShrink: 0,
+    }}>
+      {/* AAtI Secondary logo — bigger for mobile readability */}
+      <img
+        src="/AAtI-Secondary.png"
+        alt="AAtI"
+        style={{
+          height: 32,        // was 32 — now bigger and more prominent
+          width: 'auto',
+          objectFit: 'contain',
+          objectPosition: 'left center',
+          display: 'block',
+        }}
+      />
 
-      <div>
-        {/* App name — bigger & bolder */}
-        <div style={{
-          fontSize: 17,
-          fontWeight: 700,
-          color: '#b69088',
-          lineHeight: '1.2',
-          letterSpacing: '-0.01em',
-        }}>
-          Nesta
-        </div>
-        {/* Tagline */}
-        <div style={{
-          fontSize: 11,
-          fontStyle: 'italic',
-          color: '#8a7572',
-          lineHeight: '1.3',
-          marginTop: 1,
-        }}>
-          Her Future, Guided.
-        </div>
+      {/* Tagline */}
+      <div style={{
+        fontSize: 10,
+        fontStyle: 'italic',
+        color: '#8a7572',
+        lineHeight: 1.3,
+        paddingLeft: 1,
+      }}>
+        Her Future, Guided.
       </div>
     </div>
   )
