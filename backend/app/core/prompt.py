@@ -19,7 +19,27 @@ PROMPT_FILES = [
 
 def load_system_prompt() -> str:
     """Load and concatenate all prompt .txt files into one system prompt."""
-    parts = []
+    from datetime import datetime
+    import pytz
+
+    # Timezone from env var — defaults to Montreal
+    tz_name = os.getenv("NESTA_TIMEZONE", "America/Montreal")
+    local_tz = pytz.timezone(tz_name)
+    now = datetime.now(local_tz)
+    today_str = now.strftime("%A, %B %d, %Y")
+    time_str = now.strftime("%I:%M %p")
+    conference_date = os.getenv("CONFERENCE_DATE", "Friday, May 30, 2026")
+    conference_location = os.getenv("CONFERENCE_LOCATION", "District3, Montreal")
+
+    date_context = f"""[CURRENT_DATE_TIME]
+Today is {today_str}. The current time is {time_str}.
+The main conference day is {conference_date} at {conference_location}.
+If today is not {conference_date}, inform users about the upcoming conference date.
+If today IS {conference_date}, help users navigate the live agenda based on the current time.
+[END CURRENT_DATE_TIME]"""
+
+    parts = [date_context]
+
     for filename in PROMPT_FILES:
         filepath = os.path.join(PROMPTS_DIR, filename)
         if os.path.exists(filepath):
@@ -28,6 +48,7 @@ def load_system_prompt() -> str:
                 if content:
                     section = filename.replace(".txt", "").upper()
                     parts.append(f"[{section}]\n{content}\n[END {section}]")
+
     return "\n\n".join(parts)
 
 

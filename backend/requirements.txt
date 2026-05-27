@@ -13,3 +13,4 @@ pymupdf
 Pillow
 langchain-google-vertexai
 redis
+pytz
