@@ -47,7 +47,7 @@ export default function NestaChatPage({ consentGiven }) {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
 
-    const userMsg = { id: Date.now(),     sender: 'user',  text: input }
+    const userMsg = { id: Date.now(), sender: 'user', text: input }
     const nestaId = Date.now() + 1
     nestaIdRef.current   = nestaId
     bufferRef.current    = ''
@@ -59,7 +59,6 @@ export default function NestaChatPage({ consentGiven }) {
     setIsLoading(true)
 
     try {
-      // ✅ Correct 5-param call matching the updated nestaApi.js signature
       await sendMessageStream(
         input, 'default', consentGiven === true,
         chunk => { bufferRef.current += chunk; startTyping() },
@@ -137,7 +136,6 @@ export default function NestaChatPage({ consentGiven }) {
           onFocus={e => (e.target.style.border = '0.5px solid #b69088')}
           onBlur={e  => (e.target.style.border = '0.5px solid rgba(182,144,136,0.3)')}
         />
-
         <button
           onClick={handleSend}
           disabled={isLoading || !hasInput}

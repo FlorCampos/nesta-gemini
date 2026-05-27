@@ -110,9 +110,6 @@ export default function ConsentModal({ onAccept, onDecline, isLeaving }) {
             Start chatting with AAtI
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 10, color: '#d4c0bc', marginTop: 14 }}>
-            You can change this anytime in settings
-          </p>
         </div>
       </div>
     </div>

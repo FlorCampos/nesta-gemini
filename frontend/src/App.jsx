@@ -68,15 +68,6 @@ function App() {
     }
   }, [updateLayout])
 
-  const handleConsent = (accepted) => {
-    setConsentGiven(accepted)
-    setIsLeaving(true)
-    setTimeout(() => {
-      setShowConsent(false)
-      setIsLeaving(false)
-    }, 500)
-  }
-
   const renderPage = () => {
     switch (activeTab) {
       case 'agenda':    return <AgendaPage />
@@ -102,7 +93,6 @@ function App() {
           renderPage()
         )}
       </main>
-
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )

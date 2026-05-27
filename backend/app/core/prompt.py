@@ -28,7 +28,7 @@ def load_system_prompt() -> str:
     now = datetime.now(local_tz)
     today_str = now.strftime("%A, %B %d, %Y")
     time_str = now.strftime("%I:%M %p")
-    conference_date = os.getenv("CONFERENCE_DATE", "Friday, May 30, 2026")
+    conference_date = os.getenv("CONFERENCE_DATE", "Saturday, May 30, 2026")
     conference_location = os.getenv("CONFERENCE_LOCATION", "District3, Montreal")
 
     date_context = f"""[CURRENT_DATE_TIME]

@@ -1,5 +1,4 @@
 // components/SpeakerCard.jsx
-
 import { useState } from 'react'
 
 const ROLE_CHIP = {
@@ -55,9 +54,12 @@ export default function SpeakerCard({ speaker, onSelect }) {
           <span style={{ fontSize: 13, fontWeight: 700, color: '#2d2420' }}>{speaker.name}</span>
           <RoleBadge role={speaker.conferenceRole || 'Speaker'} />
         </div>
+
+        {/* ✅ Shows title + company from DB */}
         <div style={{ fontSize: 10, color: '#8a7572', lineHeight: 1.4, marginBottom: speaker.sessionTitle ? 5 : 0 }}>
-          {speaker.jobTitle || ''}
+          {[speaker.jobTitle, speaker.company].filter(Boolean).join(' · ')}
         </div>
+
         {speaker.sessionTitle && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 9, color: '#b69088' }}>📅</span>

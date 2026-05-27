@@ -63,7 +63,6 @@ function NavBtn({ active, onClick, icon, label }) {
 
 export default function TabBar({ activeTab, onTabChange }) {
   return (
-    // ✅ overflow: visible so the Nesta orb (negative margin) isn't clipped
     <div
       className="shrink-0 flex items-end bg-white w-full"
       style={{

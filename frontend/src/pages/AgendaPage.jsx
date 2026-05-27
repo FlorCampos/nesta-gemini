@@ -1,5 +1,5 @@
 // pages/AgendaPage.jsx
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase, CHIP, B } from '../data/conference'
 
 const SIMULATE_LIVE  = false
@@ -90,6 +90,18 @@ function TypeChip({ type }) {
 
 // ── Session detail sheet ──────────────────────────────────────────────────────
 function DetailSheet({ session, onClose }) {
+  const touchStart = useRef(null)
+
+  const handleTouchStart = (e) => {
+    touchStart.current = e.touches[0].clientY
+  }
+  const handleTouchEnd = (e) => {
+    if (touchStart.current === null) return
+    const delta = e.changedTouches[0].clientY - touchStart.current
+    if (delta > 60) onClose()
+    touchStart.current = null
+  }
+
   if (!session) return null
 
   const isOnline = !!session.online_link
@@ -100,20 +112,22 @@ function DetailSheet({ session, onClose }) {
         style={{ position: 'absolute', inset: 0, background: 'rgba(45,36,32,0.4)', backdropFilter: 'blur(5px)' }}
         onClick={onClose}
       />
-      <div style={{
-        position: 'relative', background: B.cream,
-        width: '100%', maxWidth: 448,
-        borderRadius: '32px 32px 0 0',
-        padding: '24px 20px',
-        // ✅ safe-area-inset-bottom so content clears Safari toolbar
-        paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 24px))',
-        maxHeight: '90vh', overflowY: 'auto',
-        zIndex: 110,
-        animation: 'slideUp 0.28s ease',
-        boxSizing: 'border-box',
-      }}>
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          position: 'relative', background: B.cream,
+          width: '100%', maxWidth: 448,
+          borderRadius: '32px 32px 0 0',
+          padding: '24px 20px',
+          paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 24px))',
+          maxHeight: '90vh', overflowY: 'auto',
+          zIndex: 110,
+          animation: 'slideUp 0.28s ease',
+          boxSizing: 'border-box',
+        }}>
         {/* Handle */}
-        <div style={{ width: 36, height: 4, background: B.mutedLight, borderRadius: 2, margin: '0 auto 20px' }} />
+        <div style={{ width: 40, height: 5, background: B.mutedLight, borderRadius: 3, margin: '0 auto 20px', cursor: 'grab' }} />
 
         {/* Close */}
         <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: B.muted, lineHeight: 1, padding: 4 }}>

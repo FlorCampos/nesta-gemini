@@ -1,5 +1,5 @@
 // pages/SpeakersPage.jsx
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { fetchAllSpeakers } from '../data/speakers'
 import { B, ROLE_CHIP } from '../data/conference'
 
@@ -40,9 +40,11 @@ function Avatar({ speaker, size = 48 }) {
   )
 }
 
-// ── Role badge ────────────────────────────────────────────────────────────────
+// ── Role badge — only renders if role is a known value ────────────────────────
 function RoleBadge({ role }) {
-  const c = ROLE_CHIP[role] || { bg: B.nestaLight, color: B.nesta }
+  // ✅ Don't render if role is empty, undefined, or not in ROLE_CHIP
+  if (!role || !ROLE_CHIP[role]) return null
+  const c = ROLE_CHIP[role]
   return (
     <span style={{
       fontSize: 8, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
@@ -56,29 +58,55 @@ function RoleBadge({ role }) {
 
 // ── Speaker detail bottom sheet ───────────────────────────────────────────────
 function SpeakerSheet({ speaker, onClose }) {
+  const sheetRef   = useRef(null)
+  const touchStart = useRef(null)
+
+  // ✅ Swipe-down to close — tracks touch on the whole sheet
+  const handleTouchStart = (e) => {
+    touchStart.current = e.touches[0].clientY
+  }
+  const handleTouchEnd = (e) => {
+    if (touchStart.current === null) return
+    const delta = e.changedTouches[0].clientY - touchStart.current
+    // If swiped down more than 60px, close
+    if (delta > 60) onClose()
+    touchStart.current = null
+  }
+
   if (!speaker) return null
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      {/* Backdrop */}
       <div
         style={{ position: 'absolute', inset: 0, background: 'rgba(45,36,32,0.4)', backdropFilter: 'blur(5px)' }}
         onClick={onClose}
       />
-      <div style={{
-        position: 'relative',
-        background: B.cream,
-        width: '100%', maxWidth: 448,
-        borderRadius: '32px 32px 0 0',
-        // ✅ paddingBottom accounts for Safari navigation bar via safe-area-inset-bottom
-        // 52px base + env() so the LinkedIn button is never hidden behind Safari's UI
-        padding: '24px 22px 0',
-        paddingBottom: 'calc(52px + env(safe-area-inset-bottom, 34px))',
-        maxHeight: '90vh', overflowY: 'auto',
-        zIndex: 210,
-        boxSizing: 'border-box',
-      }}>
-        {/* Handle */}
-        <div style={{ width: 36, height: 4, background: B.mutedLight, borderRadius: 2, margin: '0 auto 22px' }} />
+
+      {/* Sheet */}
+      <div
+        ref={sheetRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          position: 'relative',
+          background: B.cream,
+          width: '100%', maxWidth: 448,
+          borderRadius: '32px 32px 0 0',
+          padding: '24px 22px 0',
+          paddingBottom: 'calc(52px + env(safe-area-inset-bottom, 34px))',
+          maxHeight: '90vh', overflowY: 'auto',
+          zIndex: 210,
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* ✅ Handle — wider touch target, cursor hint */}
+        <div
+          style={{
+            width: 40, height: 5, background: B.mutedLight, borderRadius: 3,
+            margin: '0 auto 22px', cursor: 'grab',
+          }}
+        />
 
         {/* Close */}
         <button
@@ -96,8 +124,14 @@ function SpeakerSheet({ speaker, onClose }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
           <Avatar speaker={speaker} size={72} />
           <div style={{ flex: 1 }}>
+            {/* ✅ RoleBadge only shows if role is a known conference role */}
             <RoleBadge role={speaker.conferenceRole} />
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: B.charcoal, margin: '6px 0 3px', lineHeight: 1.25 }}>
+            <h2 style={{
+              fontSize: 20, fontWeight: 700, color: B.charcoal,
+              // Remove top margin if no badge is shown
+              margin: speaker.conferenceRole && ROLE_CHIP[speaker.conferenceRole] ? '6px 0 3px' : '0 0 3px',
+              lineHeight: 1.25,
+            }}>
               {speaker.name}
             </h2>
             <p style={{ fontSize: 11, color: B.muted, margin: 0, lineHeight: 1.45 }}>
@@ -230,7 +264,6 @@ export default function SpeakersPage() {
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '10px 36px 10px 14px',
-              // ✅ 16px prevents iOS Safari auto-zoom on focus
               fontSize: '16px',
               borderRadius: 12,
               border: '0.5px solid rgba(182,144,136,0.3)',
@@ -277,7 +310,7 @@ export default function SpeakersPage() {
                   <RoleBadge role={sp.conferenceRole} />
                 </div>
                 <div style={{ fontSize: 10, color: B.muted, lineHeight: 1.4, marginBottom: sp.sessionTitle ? 5 : 0 }}>
-                  {[sp.jobTitle, sp.company].filter(Boolean).join(' · ') || 'Her Career Conference'}
+                  {[sp.jobTitle, sp.company].filter(Boolean).join(' · ')}
                 </div>
                 {sp.sessionTitle && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
