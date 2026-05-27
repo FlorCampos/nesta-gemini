@@ -13,6 +13,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://nesta.gunghointernational.com",
+        "https://www.askaati.ai",
+        "https://askaati.ai",
         "https://project-0f32b9a0-6f64-41d5-926.web.app",
         "http://localhost:5173"
     ],
