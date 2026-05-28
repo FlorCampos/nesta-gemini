@@ -157,14 +157,26 @@ function SpeakerSheet({ speaker, onClose }) {
               <div style={{ fontSize: 12, color: B.charcoal, fontWeight: 500, lineHeight: 1.4 }}>
                 {speaker.sessionTitle}
               </div>
-              {speaker.sessionTime && (
-                <div style={{ fontSize: 10, color: B.muted, marginTop: 2 }}>
-                  {new Date(speaker.sessionTime).toLocaleTimeString('en-US', {
-                    timeZone: 'America/Montreal',
-                    hour: '2-digit', minute: '2-digit', hour12: false,
-                  })}
-                </div>
-              )}
+              {speaker.sessionTime && (() => {
+                const dt = new Date(speaker.sessionTime)
+                const day = dt.toLocaleDateString('en-US', { timeZone: 'America/Montreal', weekday: 'long' })
+                const date = dt.toLocaleDateString('en-US', { timeZone: 'America/Montreal', day: 'numeric', month: 'long' })
+                const time = dt.toLocaleTimeString('en-US', { timeZone: 'America/Montreal', hour: '2-digit', minute: '2-digit', hour12: false })
+                const isOnline = dt.getMonth() === 5 // June = month 5 (0-indexed)
+                const format = isOnline ? 'Online' : 'In Person'
+                return (
+                  <div style={{ fontSize: 10, color: B.muted, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{day} {date}</span>
+                    <span style={{ color: B.mutedLight }}>|</span>
+                    <span>{time}</span>
+                    <span style={{ color: B.mutedLight }}>|</span>
+                    <span style={{
+                      color: isOnline ? '#9b5de5' : '#3d7040',
+                      fontWeight: 600,
+                    }}>{format}</span>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
