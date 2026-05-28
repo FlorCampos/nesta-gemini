@@ -125,7 +125,11 @@ def sync_speakers():
         session_info = ""
         if session_id and session_id in session_map:
             sess = session_map[session_id]
-            session_info = f"Session: {sess.get('title', '')}"
+            sess_time = format_time(sess.get("date_time", ""))
+            sess_date = format_date(sess.get("date_time", ""))
+            is_online = "2026-06" in sess.get("date_time", "")
+            location = "Online (virtual)" if is_online else "In-person at District3"
+            session_info = f"Session: {sess.get('title', '')}. {sess_date}, {sess_time}. {location}"
 
         parts = [f"{name} — {title}." if title else f"{name}."]
         if session_info:
