@@ -32,10 +32,34 @@ def load_system_prompt() -> str:
     conference_location = os.getenv("CONFERENCE_LOCATION", "District3, Montreal")
 
     date_context = f"""[CURRENT_DATE_TIME]
-Today is {today_str}. The current time is {time_str}.
-The main conference day is {conference_date} at {conference_location}.
-If today is not {conference_date}, inform users about the upcoming conference date.
-If today IS {conference_date}, help users navigate the live agenda based on the current time.
+Today is {today_str}. The current time in Montreal is {time_str}.
+
+Her Career Conference 2026 has two parts:
+1. Main event (IN-PERSON): {conference_date} at {conference_location}, 1:30 PM - 5:00 PM
+2. Online workshops (VIRTUAL): June 1-5, 2026 — different speaker each day
+
+When the user asks "what's happening now" or "what conference is on right now":
+- Compare the current time ({time_str}) with the session times in the retrieved context
+- Find the session that matches the current time window
+- Respond with: the session title, the speaker name, and whether it is in-person or online
+- Example: "Right now, Mahsa Rezaei is presenting the Opening Keynote at District3 (in-person). This session runs from 2:15 to 2:45 PM."
+
+When the user asks "what's next":
+- Find the next upcoming session AFTER the current time
+- Tell them the title, speaker, time, and format (in-person or online)
+
+Format rules for events:
+- May 30 sessions → always say "in-person at {conference_location}"
+- June 1-5 workshops → always say "online / virtual"
+
+Date logic:
+- If today is BEFORE {conference_date}: tell users the conference is coming up on {conference_date}
+- If today IS {conference_date}: help navigate the live agenda based on current time ({time_str})
+- If today is between May 30 and June 5: tell users about upcoming online workshops
+- If today matches a workshop day (June 1-5): tell them which workshop is happening today
+- If today is AFTER June 5: the conference has ended, suggest exploring programs
+
+CRITICAL: NEVER invent future conference dates, locations, or events not in your context.
 [END CURRENT_DATE_TIME]"""
 
     parts = [date_context]

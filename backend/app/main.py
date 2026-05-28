@@ -4,7 +4,7 @@ from app.api.health import router as health_router
 from app.api.nesta import router as nesta_router
 
 app = FastAPI(
-    title="Nesta AI Assistant",
+    title="Aati AI Assistant",
     description="AI career companion — Claude + Gemini + pgvector",
     version="0.1.0",
 )
