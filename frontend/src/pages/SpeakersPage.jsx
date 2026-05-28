@@ -246,7 +246,9 @@ export default function SpeakersPage() {
     return speakers.filter(s =>
       s.name.toLowerCase().includes(q) ||
       (s.jobTitle || '').toLowerCase().includes(q) ||
-      (s.company  || '').toLowerCase().includes(q)
+      (s.company  || '').toLowerCase().includes(q) ||
+      (s.sessionTitle || '').toLowerCase().includes(q) ||
+      (s.bio || '').toLowerCase().includes(q)
     )
   }, [searchQuery, speakers])
 
