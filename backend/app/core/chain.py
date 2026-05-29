@@ -12,7 +12,7 @@ settings = get_settings()
 llm = ChatAnthropic(
     api_key=settings.ANTHROPIC_API_KEY,
     model=settings.CLAUDE_MODEL,
-    max_tokens=1024,
+    max_tokens=500,
     temperature=0.7,
     stream_usage=True,
 )
