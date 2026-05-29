@@ -17,29 +17,50 @@ export default function NestaChatPage({ consentGiven }) {
   const [input,     setInput]     = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const chatEndRef   = useRef(null)
-  const textareaRef  = useRef(null)
-  const bufferRef    = useRef('')
-  const displayedRef = useRef('')
-  const nestaIdRef   = useRef(null)
-  const intervalRef  = useRef(null)
+  const chatEndRef    = useRef(null)
+  const textareaRef   = useRef(null)
+  const bufferRef     = useRef('')
+  const displayedRef  = useRef('')
+  const nestaIdRef    = useRef(null)
+  const intervalRef   = useRef(null)
+  const lastScrollRef = useRef(0)
 
+  // Scroll only when a new message is added
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const el = chatEndRef.current?.parentElement
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages.length])
 
   const startTyping = () => {
     if (intervalRef.current) return
     intervalRef.current = setInterval(() => {
       if (displayedRef.current.length < bufferRef.current.length) {
-        const next = bufferRef.current.slice(displayedRef.current.length, displayedRef.current.length + 2)
-        displayedRef.current += next
-        const text = displayedRef.current
-        const id   = nestaIdRef.current
-        setMessages(prev => prev.map(m => m.id === id ? { ...m, text } : m))
+        const nextChunk = bufferRef.current.slice(
+          displayedRef.current.length,
+          displayedRef.current.length + 2
+        )
+        displayedRef.current += nextChunk
+        const currentText = displayedRef.current
+        const id = nestaIdRef.current
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === id ? { ...msg, text: currentText } : msg))
+        )
+        // Throttled scroll: every 300ms, only if near bottom
+        const now = Date.now()
+        if (now - lastScrollRef.current > 300) {
+          lastScrollRef.current = now
+          const el = chatEndRef.current?.parentElement
+          if (el) {
+            const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150
+            if (isNearBottom) el.scrollTop = el.scrollHeight
+          }
+        }
       } else if (!isLoading) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
+        // Final scroll when typing finishes
+        const el = chatEndRef.current?.parentElement
+        if (el) el.scrollTop = el.scrollHeight
       }
     }, 20)
   }
@@ -49,28 +70,35 @@ export default function NestaChatPage({ consentGiven }) {
 
     const userMsg = { id: Date.now(), sender: 'user', text: input }
     const nestaId = Date.now() + 1
-    nestaIdRef.current   = nestaId
-    bufferRef.current    = ''
+    nestaIdRef.current = nestaId
+    bufferRef.current = ''
     displayedRef.current = ''
 
-    setMessages(prev => [...prev, userMsg, { id: nestaId, sender: 'nesta', text: '' }])
+    setMessages((prev) => [...prev, userMsg, { id: nestaId, sender: 'nesta', text: '' }])
     setInput('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setIsLoading(true)
 
     try {
       await sendMessageStream(
-        input, 'default', consentGiven === true,
-        chunk => { bufferRef.current += chunk; startTyping() },
-        ()    => { setIsLoading(false) },
+        input,
+        'default',
+        consentGiven === true,
+        (chunk) => {
+          bufferRef.current += chunk
+          startTyping()
+        },
+        () => {
+          setIsLoading(false)
+        }
       )
-    } catch (err) {
-      console.error('AAtI stream error:', err)
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === nestaId
-            ? { ...m, text: "I'm having trouble connecting right now. Please try again." }
-            : m
+    } catch (error) {
+      console.error('AAtI stream error:', error)
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === nestaId
+            ? { ...msg, text: "I'm having trouble connecting right now. Please try again." }
+            : msg
         )
       )
       setIsLoading(false)
@@ -108,9 +136,18 @@ export default function NestaChatPage({ consentGiven }) {
         <textarea
           ref={textareaRef}
           value={input}
-          onFocus={() => {
-            setTimeout(() => { window.scrollTo(0, 0); document.body.scrollTop = 0 }, 50)
-            setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, 300)
+          onFocus={(e) => {
+            e.target.style.border = '0.5px solid #b69088'
+            setTimeout(() => {
+              window.scrollTo(0, 0)
+              document.body.scrollTop = 0
+              document.documentElement.scrollTop = 0
+            }, 50)
+            setTimeout(() => {
+              window.scrollTo(0, 0)
+              const el = chatEndRef.current?.parentElement
+              if (el) el.scrollTop = el.scrollHeight
+            }, 300)
           }}
           onChange={e => {
             setInput(e.target.value)
@@ -127,14 +164,13 @@ export default function NestaChatPage({ consentGiven }) {
             flex: 1, padding: '8px 12px', borderRadius: 18,
             border: '0.5px solid rgba(182,144,136,0.3)',
             background: '#faf7f5',
-            fontSize: '16px',   // prevents iOS Safari auto-zoom
+            fontSize: '16px',
             color: '#2d2420',
             resize: 'none', outline: 'none', fontFamily: 'inherit',
             lineHeight: 1.45, maxHeight: 100, overflowY: 'auto',
             opacity: isLoading ? 0.5 : 1, transition: 'border 0.15s',
           }}
-          onFocus={e => (e.target.style.border = '0.5px solid #b69088')}
-          onBlur={e  => (e.target.style.border = '0.5px solid rgba(182,144,136,0.3)')}
+          onBlur={e => (e.target.style.border = '0.5px solid rgba(182,144,136,0.3)')}
         />
         <button
           onClick={handleSend}

@@ -10,7 +10,7 @@ function formatText(text) {
     const line = lines[i]
     const isBullet = line.trim().startsWith('•')
 
-    if (line.trim() === '') continue  // skip all empty lines
+    if (line.trim() === '') continue
 
     if (isBullet) {
       result.push(<div key={i} style={{ paddingLeft: 8, marginTop: 4, marginBottom: 4 }}>{line}</div>)
@@ -27,7 +27,7 @@ export default function MessageBubble({ message }) {
   if (isNesta && !message.text) return null
   if (isNesta) {
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, paddingLeft: 4, paddingRight: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, paddingLeft: 4, paddingRight: 16, marginBottom: 10 }}>
         <div style={{ flexShrink: 0, marginBottom: 2 }}>
           <NestaLogo size={26} />
         </div>
@@ -45,7 +45,7 @@ export default function MessageBubble({ message }) {
     )
   }
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingLeft: 48, paddingRight: 4 }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingLeft: 48, paddingRight: 4, marginBottom: 10 }}>
       <div style={{
         maxWidth: '78%', padding: '10px 13px',
         background: '#b69088',

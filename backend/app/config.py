@@ -31,6 +31,9 @@ class Settings:
 
     # Embedding provider: "google_ai_studio" or "vertex_ai"
     EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "google_ai_studio")
+    
+    # Debug
+    DEBUG_KEY: str = os.getenv("DEBUG_KEY", "")
 
 
 @lru_cache()
