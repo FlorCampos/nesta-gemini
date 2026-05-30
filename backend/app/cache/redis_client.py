@@ -98,7 +98,7 @@ def get_cached_response(message: str) -> str | None:
         return None
 
 
-def cache_response(message: str, response: str, ttl: int = 18000, input_tokens: int = 0, output_tokens: int = 0):
+def cache_response(message: str, response: str, ttl: int = 259200, input_tokens: int = 0, output_tokens: int = 0):
     global _total_spent, _last_real_cost
     r = get_redis()
 
