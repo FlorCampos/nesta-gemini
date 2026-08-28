@@ -79,7 +79,7 @@ Two sources, chunked and embedded:
 ## Run it
  
 ```bash
-git clone https://github.com/FlorCampos/{{repo}} && cd {{repo}}
+git clone https://github.com/FlorCampos/nesta-gemini && cd nesta-gemini
 cp backend/.env.example backend/.env    # fill in your keys
 docker compose up
 ```
@@ -89,8 +89,5 @@ docker compose up
 - Cache matching is exact, not semantic — paraphrased questions miss.
 - Cost totals are in-memory and reset on restart; there is no persisted spend history.
 - The error-pattern list that keeps failures out of the cache is hand-maintained.
-- {{añade lo que sepas que falta — esta sección es la que más confianza genera}}
-## Roadmap
- 
-- {{tres puntos, con fecha}}
+
  
